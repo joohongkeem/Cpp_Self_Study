@@ -59,5 +59,185 @@ using namespace std;
 
 /*
 	* 프렌드 함수
+	
+	★★★
+	- 만약, 잘 갖춰진 accessor와 mutator 함수가 있다면 이 함수들은 독립적인 연산자 오버로딩에 사용할 수 있다.
+	  But, 멤버 변수를 읽기위해 여러개의 accessor에 접근해야 하므로, 코드를 읽기도 어려우며 또한 비효율적이다.
+	  이를 해결하기 위해, 멤버 함수로서 연산자를 오버로딩할 수 있지만,
+	  그렇게 하더라도 첫째 피연산자의 자동 형 변환을 할 수 없는 문제점을 가지고 있다.
+	  프렌드 함수로서 +연산자를 오버로딩하는 방법은 멤버 변수로의 직접적인 접근과 모든 피연산자의 자동 형 변환이 가능하다.
 
+	- 클래스의 '프렌드 함수(friend function)'는 클래스의 멤버 함수는 아니지만 클래스의 멤버 함수가 동작하는 것 처럼
+	  클래스의 private멤버에 접근할 수 있다.
+	  프렌드 함수를 만들기 위해서는 클래스 정의에서 프렌드 함수로 명명해야 한다.
+	  클래스의 정의부에서 연산자나 함수 선언 앞에 friend 키워드를 사용함으로써 연산자나 함수를 클래스의 프렌드로 만들 수 있다.
+	  하지만, 프렌드는 클래스의 멤버함수가 아니다.
+	  프렌드는 클래스의 멤버에 비정상적으로 접근하는 정상적인 함수이다.★★
+			> 연산자의 정의부에서는 함수 헤더 부분에 제한자 Money::를 사용하지 않는다.
+			> 선언에서만 friend 키워드를 사용하고, 정의부에서는 friend 키워드를 사용하지 않는다.
+			> 프렌드 연산자는 모든 인자에 대하여 자동 형 변환을 지원한다.
+			> 프렌드 함수는 public 섹션이나 private 섹션 어느 곳에 위치해도 무방하지만, public 함수를 원하는 경우에는 public섹션에 선언해야한다.
+
+	- 가장 일반적인 프렌드 함수는 연산자의 오버로딩이지만, 일반적인 함수도 가능하다.
+
+
+	[★함정★]
+	- 어떤 C++ 컴파일러는 프렌드 함수가 작동하지 않는다
+			>> 이러한 문제를 해결하기 위해서는 아래의 두가지 방법중 적절한 방법을 선택해야한다.
+					1) accessor와 mutator 함수와 함께 외부 함수를 선언하여 사용
+					2) 멤버로서 연산자 오버로딩을 하여 사용하여야 한다.
 */
+
+
+class Money
+{
+public:
+	// 생성자
+	//
+	Money();				
+	Money(double amount);
+	Money(int theDollars);
+	Money(int theDollars, int theCents);
+
+	void output() const;
+
+	// - 연산자의 정의부에서는 함수 헤더 부분에 제한자 Money::를 사용하지 않는다.
+	// - 선언에서만 friend 키워드를 사용하고, 정의부에서는 friend 키워드를 사용하지 않는다.
+	// - 프렌드 연산자는 모든 인자에 대하여 자동 형 변환을 지원한다.
+	// - 프렌드 함수는 public 섹션이나 private 섹션 어느 곳에 위치해도 무방하지만, public 함수를 원하는 경우에는 public섹션에 선언해야한다.
+	//
+	friend const Money operator + (const Money& amount1, const Money& amount2);
+	friend const Money operator - (const Money& amount1, const Money& amount2);
+	friend bool operator == (const Money& amount1, const Money& amount2);
+	friend const Money operator - (const Money& amount1);
+
+private:
+	int dollars;
+	int cents;
+
+	int dollarsPart(double amount) const;
+	int centsPart(double amount) const;
+};
+
+
+
+int main()
+{
+	Money account(120,50);
+	account.output();
+
+	(account+40).output();
+	(40+account).output();		// friend함수를 이용하니 둘 다 잘 실행됐다.
+
+	return 0;
+}
+
+Money::Money():dollars(0),cents(0)
+{
+}
+Money::Money(double amount):dollars(dollarsPart(amount)),cents(centsPart(amount))
+{
+}
+Money::Money(int theDollars):dollars(theDollars),cents(0)
+{
+}
+Money::Money(int theDollars, int theCents):dollars(theDollars),cents(theCents)
+{
+}
+
+// 실수형을 받아, 달러부분과 센트 부분으로 나누어 주기 위한 함수
+// - 함수내에서만 호출되므로 private으로 선언
+// - 함수 내부에서 멤버 변수의 값을 변경하면 안되므로 const로 선언
+//
+// ★★ 선언에서 const를 붙여줬으므로, 정의에서도 뒤에 const를 붙여줘야 한다.
+int Money::dollarsPart(double amount) const
+{
+	return static_cast<int> (amount);
+}
+
+int Money::centsPart(double amount) const
+{
+	return static_cast<int>((amount-dollarsPart(amount))*100);
+}
+
+
+void Money::output() const
+{
+
+	double total = dollars + cents/100.0;
+	cout << "잔액 : $ "<<total <<endl;
+}
+
+// - 연산자의 정의부에서는 함수 헤더 부분에 제한자 Money::를 사용하지 않는다.
+// - 선언에서만 friend 키워드를 사용하고, 정의부에서는 friend 키워드를 사용하지 않는다.
+// - 프렌드 연산자는 모든 인자에 대하여 자동 형 변환을 지원한다.
+// - 프렌드 함수는 public 섹션이나 private 섹션 어느 곳에 위치해도 무방하지만, public 함수를 원하는 경우에는 public섹션에 선언해야한다.
+//
+const Money operator +(const Money& amount1, const Money& amount2)
+{
+	int flags= 0;
+	int allCents1 = amount1.dollars*100 + amount1.cents;
+	int allCents2 = amount2.dollars*100 + amount2.cents;
+	// 
+	// 아래처럼 선언하던걸 드디어 위처럼 선언할 수 있어졌다!!
+	//
+	//int allCents1 = amount1.getDollars()*100 + amount1.getCents();
+	//int allCents2 = amount2.getDollars()*100 + amount2.getCents();
+
+
+	int sumCents = allCents1 + allCents2;
+	if(sumCents< 0) {
+		sumCents = -sumCents;
+		flags=1;
+	}
+	int finalDollars = sumCents/100;
+	int finalCents = sumCents%100;
+	
+	if(flags){
+		finalDollars = -finalDollars;
+		finalCents = -finalCents;	
+	}
+
+
+	return Money(finalDollars, finalCents);
+}
+
+const Money operator -(const Money& amount1, const Money& amount2)
+{
+	int flags= 0;
+	int allCents1 = amount1.dollars*100 + amount1.cents;
+	int allCents2 = amount2.dollars*100 + amount2.cents;
+	// 
+	// 아래처럼 선언하던걸 드디어 위처럼 선언할 수 있어졌다!!
+	//
+	//int allCents1 = amount1.getDollars()*100 + amount1.getCents();
+	//int allCents2 = amount2.getDollars()*100 + amount2.getCents();
+
+
+	int diffCents = allCents1 - allCents2;
+	if(diffCents< 0) {
+		diffCents = -diffCents;	
+		flags=1;
+	}
+	int finalDollars = diffCents/100;
+	int finalCents = diffCents%100;
+	
+	if(flags){
+		finalDollars = -finalDollars;
+		finalCents = -finalCents;	
+	}
+
+	return Money(finalDollars, finalCents);
+}
+
+const Money operator -(const Money& amount)
+{
+	return Money(-amount.dollars, -amount.cents);
+}
+
+bool operator ==(const Money& amount1, const Money& amount2)
+{
+	return( (amount1.dollars == amount2.dollars)
+		&& (amount1.cents == amount2.cents));
+}
+
