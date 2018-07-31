@@ -15,7 +15,7 @@
 	 - [주의1] 변수 n의 값을 변환시키지 않는다.
 	 - [주의2] static_cast<int>(n) 의 n에 실수형을 넣는다면, 소수점 이하를 버린 값이 반환.
 
-	 2. cont_cast<Type>(Expression) 
+	 2. const_cast<Type>(Expression) 
 	 - 상수형 번환을 위해 사용된다.
 
 	 3. dynamic_cast<Type>(Expression)
